@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from src.repositories.database import Database
 from src.repositories.schemas import Admin, Client,Project
 from src.utils.logger import get_logger
@@ -95,31 +95,22 @@ class ProjectRepository:
         finally:
             session.close() 
 
-# from sqlalchemy.orm import Session
-# from src.repositories.database import Database
-# from src.repositories.schemas.schema import MenuItems, Orders, OrderItems, Customers,ErrorLogs
-# from datetime import datetime
-# from src.utils.helpers import log_error
+class GetProjectRepository:
+    def __init__(self):
+        self.db = Database()
 
+    def _get_session(self):
+        return self.db.SessionLocal()
+    async def get_all_projects(self):
+        session = self._get_session()
+        try:
+            projects = session.query(Project).options(joinedload(Project.client)).all()
+            return projects
+        except Exception as e:
+            session.rollback()
+            logger.exception("Error in getting the project", error=str(e))
+            raise
+        finally:
+            session.close() 
 
-# class CafeBotRepository:
-#     def __init__(self):
-#         self.db = Database()
-#     def _get_session(self):
-#         return self.db.SessionLocal()
-#     def get_menu_items(self):
-#         session = self._get_session()
-#         try:
-#             items = session.query(MenuItems).all()
-#             return [
-#                 {
-#                     "item_name": i.item_name,
-#                     "price": i.price
-#                 }
-#                 for i in items
-#             ]
-#         except Exception as e:
-#             log_error(file_name="repository.py",function_name="get_menu_items",exception=e)
-#             raise
-#         finally:
-#             session.close()
+        

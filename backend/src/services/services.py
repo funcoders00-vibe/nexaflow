@@ -1,4 +1,4 @@
-from src.repositories.repositories import LoginRepository, ProjectRepository
+from src.repositories.repositories import LoginRepository, ProjectRepository, GetProjectRepository
 from src.utils.exceptions.error_codes import validation_error
 from src.utils.logger import get_logger
 
@@ -38,7 +38,6 @@ class ProjectService:
 
         logger.info("Starting project creation", request_id=request_id)
 
-        # ✅ 1. Check if client exists
         existing_client = await self.repo.get_client_by_email(client_data["email"])
 
         if existing_client:
@@ -48,7 +47,6 @@ class ProjectService:
             logger.info("Creating new client")
             client_id = await self.repo.create_client(client_data)
 
-        # ✅ 2. Create project
         project_data["client_id"] = client_id
 
         project_id = await self.repo.create_project(project_data)
@@ -68,3 +66,20 @@ class ProjectService:
             "project_id": project_id,
             "client_id": client_id
         }
+
+class GetProjectService:
+    def __init__(self):
+        self.repo=GetProjectRepository()
+    async def get_project(self,request_id:str):
+        projects=await self.repo.get_all_projects()
+        print("projects.....",projects)
+        return [
+       {
+        "client_name": p.client.client_name,
+        "project_name": p.project_name,
+        "budget": p.budget,
+        "deadline": str(p.deadline),
+        "status": p.current_status
+    } 
+    for p in projects 
+] 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -301,12 +302,7 @@ const navItems = [
 
 const avatarColors = ["#1d4ed8", "#7c3aed", "#0891b2", "#059669"];
 
-const projects = [
-  { initials: "SC", name: "Stellar Corp",     project: "Quantum Edge Migration",    budget: "$42,500.00", deadline: "Oct 12, 2024", status: "in-progress",  color: avatarColors[0] },
-  { initials: "NS", name: "Nebula Systems",   project: "Cloud Sync Infrastructure", budget: "$18,200.00", deadline: "Nov 04, 2024", status: "completed",    color: avatarColors[1] },
-  { initials: "AL", name: "Apex Logic",       project: "AI Forecasting Engine",     budget: "$65,000.00", deadline: "Dec 20, 2024", status: "started",      color: avatarColors[2] },
-  { initials: "HE", name: "Helix Energetics", project: "Green Grid Dashboard",      budget: "$31,750.00", deadline: "Jan 15, 2025", status: "in-progress",  color: avatarColors[3] },
-];
+
 
 const statusLabel = { "in-progress": "In Progress", "completed": "Completed", "started": "Started" };
 
@@ -316,14 +312,103 @@ export default function NexaFlowProjects() {
   const [status, setStatus]       = useState("all");
   const [client, setClient]       = useState("all");
   const [page, setPage]           = useState(1);
+  const [projects, setProjects] = useState([]);
+  const [updatingProjectId, setUpdatingProjectId] = useState(null);
   const navigate = useNavigate();
-
-  const filtered = projects.filter((p) => {
-    const matchName   = p.name.toLowerCase().includes(filter.toLowerCase()) || p.project.toLowerCase().includes(filter.toLowerCase());
-    const matchStatus = status === "all" || p.status === status;
-    const matchClient = client === "all" || p.initials === client;
-    return matchName && matchStatus && matchClient;
+  const getAllowedNextStatuses = (currentStatus) => {
+  switch (currentStatus) {
+    case "started": return ["in-progress"];
+    case "in-progress": return ["completed"];
+    case "completed": return [];
+    default: return [];
+  }
+};
+  const requestDeveloperApproval = (project, newStatus) => {
+  return new Promise((resolve, reject) => {
+    const developerName = window.prompt(
+      `Developer approval required for changing project "${project.project_name}" from ${project.status} to ${newStatus}.\nEnter your name / approval code:`
+    );
+    if (developerName && developerName.trim() !== "") {
+      resolve(developerName.trim());
+    } else {
+      reject("Approval cancelled or no name provided.");
+    }
   });
+};
+
+  const updateProjectStatus = async (projectId, newStatus, approver) => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/dashboard/update-project-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: projectId, status: newStatus, approved_by: approver }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return data;
+      } else {
+        throw new Error(data.message || "Update failed");
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleStatusClick = async (project) => {
+  const currentStatus = project.status;
+  const allowedNext = getAllowedNextStatuses(currentStatus);
+
+  if (allowedNext.length === 0) {
+    alert(`Project is already ${currentStatus} – no further status changes allowed.`);
+    return;
+  }
+
+  // For simplicity, we take the first allowed next status.
+  // You could extend this to a dropdown selection.
+  const newStatus = allowedNext[0];
+
+  setUpdatingProjectId(project.project_id || project.project_name);
+  try {
+    const approver = await requestDeveloperApproval(project, newStatus);
+    await updateProjectStatus(project.project_id, newStatus, approver);
+    alert(`Status updated to ${newStatus} (approved by ${approver}).`);
+    await fetchProjects(); // refresh list
+  } catch (err) {
+    alert(err.message || "Status change cancelled or failed.");
+  } finally {
+    setUpdatingProjectId(null);
+  }
+};
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/dashboard/get-projects");
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log("from frontend",data.data)
+        setProjects(data.data.data);
+      } else {
+        console.error(data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const filtered = projects.filter((p) => {
+  const matchName =
+    p.client_name?.toLowerCase().includes(filter.toLowerCase()) ||
+    p.project_name?.toLowerCase().includes(filter.toLowerCase());
+
+  const matchStatus = status === "all" || p.status === status;
+  const matchClient = client === "all" || p.client_name?.startsWith(client);
+
+  return matchName && matchStatus && matchClient;
+});
 
   return (
     <>
@@ -473,25 +558,38 @@ export default function NexaFlowProjects() {
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((p) => (
-                      <tr key={p.name}>
+                    filtered.map((p,index) => (
+                      <tr key={index}>
                         <td>
                           <div className="nf-client-cell">
-                            <div className="nf-client-avatar" style={{ background: p.color }}>
-                              {p.initials}
+                            <div className="nf-client-avatar" style={{ background: "#1d4ed8" }}>
+                              {p.client_name?.substring(0, 2).toUpperCase()}
                             </div>
-                            <span className="nf-client-name">{p.name}</span>
+                            <span className="nf-client-name">{p.client_name}</span>
                           </div>
                         </td>
-                        <td>{p.project}</td>
-                        <td><span className="nf-budget">{p.budget}</span></td>
-                        <td><span className="nf-deadline">{p.deadline}</span></td>
+
+                        <td>{p.project_name}</td>
+
                         <td>
-                          <span className={`nf-status-pill ${p.status}`}>
-                            {statusLabel[p.status]}
-                            {p.status === "started" && <span className="nf-status-chevron">▾</span>}
-                          </span>
+                          <span className="nf-budget">₹{p.budget}</span>
                         </td>
+
+                        <td>
+                          <span className="nf-deadline">{p.deadline}</span>
+                        </td>
+
+                        {/* <td>
+                          <span
+                            className={`nf-status-pill ${project.status.toLowerCase().replace(" ", "-")}`}
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleStatusClick(project)}
+                            title="Click to change status (requires developer approval)"
+                          >
+                            {project.status}
+                          </span>
+                        </td> */}
+
                         <td>
                           <button className="nf-actions-btn">⋮</button>
                         </td>

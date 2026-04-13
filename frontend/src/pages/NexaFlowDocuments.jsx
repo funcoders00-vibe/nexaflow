@@ -352,7 +352,7 @@ export default function NexaFlowDocuments() {
                     setActiveNav(label);
 
                     if (label === "Clients") {
-                        navigate("/client"); // 🚀 redirect
+                        navigate("/client"); 
                     }
 
                     if (label === "Dashboard") {
