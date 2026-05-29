@@ -11,7 +11,13 @@ from src.repositories.schemas import (
     Agreement,
     Invoice,
     EmailTemplate,
-    Email
+    Email,
+    OTPVerification,
+    Task,
+    Payment,
+    ActivityLog,
+    NexaAIChatSession,
+    NexaAIChatMessage
 )
 
 TABLE_ORDER_CREATION = [
@@ -29,10 +35,19 @@ TABLE_ORDER_CREATION = [
     Invoice.__tablename__,           
     EmailTemplate.__tablename__,     
     Email.__tablename__,             
+    OTPVerification.__tablename__,
+    Task.__tablename__,
+    Payment.__tablename__,
+    ActivityLog.__tablename__,
+    
+    # Nexa AI Chat Tables
+    NexaAIChatSession.__tablename__,
+    NexaAIChatMessage.__tablename__,
 ]
 
 
 MODEL_CLASSES = {
+
     Admin.__tablename__: Admin,
 
     Client.__tablename__: Client,
@@ -47,6 +62,14 @@ MODEL_CLASSES = {
 
     EmailTemplate.__tablename__: EmailTemplate,
     Email.__tablename__: Email,
+
+    OTPVerification.__tablename__: OTPVerification,
+    Task.__tablename__: Task,
+    Payment.__tablename__: Payment,
+    ActivityLog.__tablename__: ActivityLog,
+    
+    NexaAIChatSession.__tablename__: NexaAIChatSession,
+    NexaAIChatMessage.__tablename__: NexaAIChatMessage,
 }
 
 

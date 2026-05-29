@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import uuid
 from datetime import datetime
-
+from fastapi.staticfiles import StaticFiles
 from src.settings import config
 from src.routes.routes import router
 from src.repositories.database import Database
@@ -99,6 +99,7 @@ def create_app():
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
     app.include_router(router, prefix="/api")
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
     @app.get("/")
     def root():
