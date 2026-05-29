@@ -1,0 +1,170 @@
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import uvicorn
+import uuid
+from datetime import datetime
+from fastapi.staticfiles import StaticFiles
+from src.settings import config
+from src.routes.routes import router
+from src.repositories.database import Database
+from src.utils.logger import get_logger
+
+logger = get_logger("nexaflow")
+
+# Global variables
+app_config = None
+db_connection = None
+
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handles Pydantic/FastAPI validation errors.
+    """
+    request_id = str(uuid.uuid4())
+
+    logger.warn(
+        "Validation error occurred",
+        request_id=request_id,
+        path=str(request.url),
+        errors=exc.errors()
+    )
+
+    error_details = []
+    for error in exc.errors():
+        field_path = " -> ".join(str(loc) for loc in error["loc"])
+        msg = error["msg"]
+
+        if "missing" in msg:
+            message = f"Field '{field_path}' is required."
+        elif "empty" in msg or "whitespace" in msg:
+            message = f"Field '{field_path}' cannot be empty or whitespace only."
+        else:
+            message = f"{field_path}: {msg}"
+
+        error_details.append({
+            "code": "NEXA_VAL_022",
+            "message": message,
+        })
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "failure",
+            "code": 422,
+            "message": "Validation error",
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "errors": error_details
+        }
+    )
+
+
+def initialize_config():
+    """Initialize configuration"""
+    global app_config, db_connection
+    try:
+        app_config = config
+        db_connection = Database()
+
+        logger.info(
+            "Configuration initialized",
+            env=getattr(app_config, "env", "local"),
+            log_level=app_config.log_level
+        )
+
+        return True
+    except Exception as e:
+        logger.exception("Failed to initialize configuration", error=str(e))
+        return False
+
+
+def create_app():
+    """Create and configure the FastAPI app"""
+    app = FastAPI(
+        title="NexaFlow",
+        description="Internal Automation System",
+        version="1.0.0"
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
+    app.include_router(router, prefix="/api")
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    @app.get("/")
+    def root():
+        logger.info("Health check endpoint called")
+        return {"message": "NexaFlow API is running"}
+
+    return app
+
+
+def run_local_server():
+    """Run the server locally"""
+    if not initialize_config():
+        logger.error("Failed to initialize configuration")
+        exit(1)
+
+    if not db_connection.test_connection():
+        logger.error(
+            "Database connection test failed",
+            db_host=app_config.db_host,
+            db_name=app_config.db_name
+        )
+        exit(1)
+
+    logger.info(
+        "Database connected successfully",
+        db_host=app_config.db_host,
+        db_name=app_config.db_name
+    )
+
+    # Migrations and Seeders (intentionally commented)
+    try:
+        from src.migrations.migrations import Migration
+        from src.migrations.seeders import Seeder
+    
+        migration = Migration()
+        migration.create_tables()
+    
+        seeder = Seeder()
+        seeder.seed_data()
+    except Exception as e:
+        logger.warning("Migration/Seeding failed", error=str(e))
+
+    app = create_app()
+
+    logger.info(
+        "Starting server",
+        host=app_config.host,
+        port=app_config.port
+    )
+
+    uvicorn.run(
+        app,
+        host=app_config.host,
+        port=int(app_config.port),
+        reload=False,
+        log_level=app_config.log_level.lower(),
+        access_log=True
+    )
+
+
+if __name__ == "__main__":
+    try:
+        run_local_server()
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.exception("Server startup failed", error=str(e))
+        exit(1)
