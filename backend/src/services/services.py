@@ -14,8 +14,42 @@ from datetime import datetime, timedelta
 import resend
 
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 resend.api_key = os.getenv("RESEND_API_KEY")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADD TO services.py
+# ─────────────────────────────────────────────────────────────────────────────
+import io, base64, os, smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+from reportlab.platypus import Image as RLImage
+from PIL import Image as PILImage
+
+from src.repositories.repositories import (
+    DocumentRepository, AgreementRepository,
+    InvoiceRepository, EmailRepository, GetProjectRepository,
+)
+from src.utils.exceptions.error_codes import validation_error
+
+# ── SMTP CONFIG — set via environment variables ───────────────────────────────
+SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT     = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER     = os.getenv("SMTP_USER", "your@gmail.com")       # sender address
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_app_password")
+COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "team@yourcompany.com")
+STATIC_DIR    = os.getenv("STATIC_DIR", "static/documents")    # where PDFs are saved on disk
+
+os.makedirs(STATIC_DIR, exist_ok=True)
 
 class LoginService:
 
@@ -57,24 +91,82 @@ class LoginService:
         )
 
         # Send Email
+        # try:
+        #     resend.Emails.send({
+        #         "from": "NexaFlow <onboarding@resend.dev>",
+        #         "to": [admin.email],
+        #         "subject": "NexaFlow Login OTP",
+        #         "html": f"""
+        #             <div style="font-family:sans-serif; padding:20px;">
+        #                 <h2>NexaFlow Security Verification</h2>
+        #                 <p>Your OTP Code:</p>
+        #                 <div style="font-size:32px; font-weight:bold; letter-spacing:5px;">{otp}</div>
+        #                 <p>Expires in 5 minutes.</p>
+        #             </div>
+        #         """
+        #     })
+        # except Exception as mail_err:
+        #     logger.warning(f"Could not send OTP email via Resend: {mail_err}")
+        #     # Dev fallback: print OTP to console so developers can log in
+        #     print(f"\n========================================\n[DEV] OTP CODE FOR {admin.email}: {otp}\n========================================\n")
+        # Send OTP via SMTP
+
         try:
-            resend.Emails.send({
-                "from": "NexaFlow <onboarding@resend.dev>",
-                "to": [admin.email],
-                "subject": "NexaFlow Login OTP",
-                "html": f"""
-                    <div style="font-family:sans-serif; padding:20px;">
-                        <h2>NexaFlow Security Verification</h2>
-                        <p>Your OTP Code:</p>
-                        <div style="font-size:32px; font-weight:bold; letter-spacing:5px;">{otp}</div>
-                        <p>Expires in 5 minutes.</p>
-                    </div>
-                """
-            })
+
+            msg = MIMEMultipart("alternative")
+
+            msg["Subject"] = "NexaFlow Login OTP"
+
+            msg["From"] = SMTP_USER
+
+            msg["To"] = admin.email
+
+            html_content = f"""
+            <div style="font-family: Arial; padding:20px;">
+                <h2>NexaFlow Security Verification</h2>
+
+                <p>Your OTP Code:</p>
+
+                <div style="
+                    font-size:32px;
+                    font-weight:bold;
+                    letter-spacing:5px;
+                    color:#2563eb;
+                ">
+                    {otp}
+                </div>
+
+                <p>Expires in 5 minutes.</p>
+            </div>
+            """
+
+            msg.attach(MIMEText(html_content, "html"))
+
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+
+            server.starttls()
+
+            server.login(SMTP_USER, SMTP_PASSWORD)
+
+            server.sendmail(
+                SMTP_USER,
+                admin.email,
+                msg.as_string()
+            )
+
+            server.quit()
+
+            print(f"OTP sent successfully to {admin.email}")
+
         except Exception as mail_err:
-            logger.warning(f"Could not send OTP email via Resend: {mail_err}")
-            # Dev fallback: print OTP to console so developers can log in
-            print(f"\n========================================\n[DEV] OTP CODE FOR {admin.email}: {otp}\n========================================\n")
+
+            logger.warning(f"Could not send OTP email: {mail_err}")
+
+            print(
+                f"\n========================================"
+                f"\n[DEV] OTP CODE FOR {admin.email}: {otp}"
+                f"\n========================================\n"
+            )
 
         return {
             "admin_id": admin.id,
@@ -246,36 +338,7 @@ class UpdateProjectStatusService:
 
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ADD TO services.py
-# ─────────────────────────────────────────────────────────────────────────────
-import io, base64, os, smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_RIGHT, TA_CENTER
-from reportlab.platypus import Image as RLImage
-from PIL import Image as PILImage
 
-from src.repositories.repositories import (
-    DocumentRepository, AgreementRepository,
-    InvoiceRepository, EmailRepository, GetProjectRepository,
-)
-from src.utils.exceptions.error_codes import validation_error
-
-# ── SMTP CONFIG — set via environment variables ───────────────────────────────
-SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT     = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER     = os.getenv("SMTP_USER", "your@gmail.com")       # sender address
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_app_password")
-COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "team@yourcompany.com")
-STATIC_DIR    = os.getenv("STATIC_DIR", "static/documents")    # where PDFs are saved on disk
-
-os.makedirs(STATIC_DIR, exist_ok=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
