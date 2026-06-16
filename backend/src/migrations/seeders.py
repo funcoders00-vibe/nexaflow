@@ -33,6 +33,16 @@ class Seeder:
                         productivity_score=98.0,
                         is_active=True
                     ),
+                    Admin(
+                        email="venkatb3011@gmail.com",
+                        password=pbkdf2_sha256.hash("venkey"),
+                        name="Jeeva dharshan",
+                        role="Admin",
+                        salary=150000.0,
+                        productivity_score=98.0,
+                        is_active=True
+                    ),
+
                 ]
                 session.add_all(employees)
                 session.commit()
