@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Request, Header, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from src.utils.logger import get_logger
+from src.utils.rate_limiter import limiter
 from src.utils.exceptions.error_codes import validation_error, ApplicationError
 from src.services.services import LoginService, ProjectService, GetProjectService, UpdateProjectStatusService
-import resend
-import random
 import jwt
-from datetime import datetime, timedelta 
 from fastapi import UploadFile, File, Form
 from typing import List
 import uuid
@@ -23,6 +21,7 @@ logger = get_logger("auth_routes")
 
 
 @router.post("/login")
+@limiter.limit("5/minute")
 async def login(request: Request):
 
     request_id = str(uuid.uuid4())
@@ -68,6 +67,7 @@ async def login(request: Request):
 # =========================================================
 
 @router.post("/verify-otp")
+@limiter.limit("5/minute")
 async def verify_otp(request: Request):
 
     service = LoginService()
@@ -358,7 +358,8 @@ def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Authorization header missing")
     try:
         token = authorization.split(" ")[1] if " " in authorization else authorization
-        payload = jwt.decode(token, "nexaflow-super-secret-key-12345", algorithms=["HS256"])
+        from src.settings import config
+        payload = jwt.decode(token, config.jwt_secret_key, algorithms=["HS256"])
         return payload
     except Exception as e:
         logger.warning(f"JWT Verification failed: {e}")
@@ -756,305 +757,6 @@ async def get_activity_logs(current_user: dict = Depends(get_current_user)):
         ]
     }
 
-# ── AI Insights ───────────────────────────────────────────────────────────────
 
-@router.get("/ai/insights")
-async def get_ai_insights(current_user: dict = Depends(get_current_user)):
-    project_repo = GetProjectRepository()
-    emp_repo = EmployeeRepository()
-    
-    projects = await project_repo.get_all_projects()
-    employees = await emp_repo.get_all_employees()
-    
-    total_budget = sum(p.budget for p in projects if p.budget)
-    completed_budget = sum(p.budget for p in projects if p.current_status == "Completed" and p.budget)
-    
-    revenue_pred = total_budget * 1.15 if total_budget else 50000.0
-    
-    at_risk = []
-    today = datetime.utcnow().date()
-    for p in projects:
-        if p.deadline and p.current_status != "Completed":
-            days_left = (p.deadline - today).days
-            if days_left < 14:
-                at_risk.append({
-                    "project_id": p.project_id,
-                    "project_name": p.project_name,
-                    "days_remaining": days_left,
-                    "risk_level": "High" if days_left < 7 else "Medium"
-                })
-                
-    prod_scores = [e.productivity_score for e in employees if e.productivity_score]
-    avg_prod = sum(prod_scores) / len(prod_scores) if prod_scores else 85.0
-    
-    top_performer = max(employees, key=lambda e: e.productivity_score or 0) if employees else None
-    
-    recommendations = []
-    if at_risk:
-        recommendations.append(f"Deploy resources to high-risk project: '{at_risk[0]['project_name']}' which is due in {at_risk[0]['days_remaining']} days.")
-    if len(projects) > 0 and total_budget > 0 and (completed_budget / total_budget) < 0.5:
-        recommendations.append("Overall project completion rate is low. Consider holding a project status sync.")
-    if avg_prod < 80:
-        recommendations.append("Team productivity is dropping. Schedule a training or resource review.")
-    else:
-        recommendations.append("Team productivity remains high. Consider allocating additional projects to developers.")
-        
-    return {
-        "status": "success",
-        "data": {
-            "revenue_prediction": round(revenue_pred, 2),
-            "project_risk": at_risk,
-            "average_productivity": round(avg_prod, 1),
-            "top_performer": top_performer.name if top_performer else "N/A",
-            "recommendations": recommendations
-        }
-    }
-
-@router.post("/ai/chat")
-async def ai_chat(request: Request, current_user: dict = Depends(get_current_user)):
-    body = await request.json()
-    message = body.get("message", "")
-    if not message:
-        return {"status": "error", "message": "message missing"}
-
-    from src.repositories.database import Database
-    from src.services.qdrant_service import QdrantService
-    from src.services.nexa_ai_service import NexaAIService
-    
-    db = Database()
-    session = db.SessionLocal()
-    qdrant = QdrantService()
-    nexa_ai = NexaAIService()
-    
-    try:
-        # Quick sync
-        qdrant.sync_database_to_qdrant(session)
-        # Search semantic context
-        context_hits = qdrant.search_knowledge_semantic(message, limit=5)
-        # Call LLM single turn
-        result = nexa_ai.generate_chat_response(message, context_hits, [])
-        return {
-            "status": "success",
-            "data": {
-                "response": result["response"],
-                "sources": result["sources"]
-            }
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-    finally:
-        session.close()
-
-
-# ── Nexa AI Chat Sessions & RAG ───────────────────────────────────────────────
-
-@router.get("/ai/sessions")
-async def get_ai_sessions(current_user: dict = Depends(get_current_user)):
-    from src.repositories.database import Database
-    from src.repositories.schemas import NexaAIChatSession
-    db = Database()
-    session = db.SessionLocal()
-    try:
-        user_email = current_user.get("sub") or current_user.get("email")
-        sessions = session.query(NexaAIChatSession).filter(
-            NexaAIChatSession.user_email == user_email
-        ).order_by(NexaAIChatSession.created_at.desc()).all()
-        return {
-            "status": "success",
-            "data": [
-                {
-                    "session_uuid": s.session_uuid,
-                    "title": s.title,
-                    "created_at": s.created_at.isoformat()
-                } for s in sessions
-            ]
-        }
-    finally:
-        session.close()
-
-@router.post("/ai/sessions")
-async def create_ai_session(request: Request, current_user: dict = Depends(get_current_user)):
-    import uuid
-    from src.repositories.database import Database
-    from src.repositories.schemas import NexaAIChatSession
-    db = Database()
-    session = db.SessionLocal()
-    try:
-        user_email = current_user.get("sub") or current_user.get("email")
-        body = await request.json()
-        title = body.get("title", "New Conversation")
-        
-        session_uuid = str(uuid.uuid4())
-        new_sess = NexaAIChatSession(
-            session_uuid=session_uuid,
-            user_email=user_email,
-            title=title
-        )
-        session.add(new_sess)
-        session.commit()
-        return {
-            "status": "success",
-            "data": {
-                "session_uuid": session_uuid,
-                "title": title
-            }
-        }
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        session.close()
-
-@router.delete("/ai/sessions/{session_uuid}")
-async def delete_ai_session(session_uuid: str, current_user: dict = Depends(get_current_user)):
-    from src.repositories.database import Database
-    from src.repositories.schemas import NexaAIChatSession
-    db = Database()
-    session = db.SessionLocal()
-    try:
-        user_email = current_user.get("sub") or current_user.get("email")
-        sess = session.query(NexaAIChatSession).filter(
-            NexaAIChatSession.session_uuid == session_uuid,
-            NexaAIChatSession.user_email == user_email
-        ).first()
-        if not sess:
-            raise HTTPException(status_code=404, detail="Session not found")
-        session.delete(sess)
-        session.commit()
-        return {"status": "success", "message": "Session deleted"}
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        session.close()
-
-@router.get("/ai/sessions/{session_uuid}/messages")
-async def get_session_messages(session_uuid: str, current_user: dict = Depends(get_current_user)):
-    from src.repositories.database import Database
-    from src.repositories.schemas import NexaAIChatSession, NexaAIChatMessage
-    db = Database()
-    session = db.SessionLocal()
-    try:
-        user_email = current_user.get("sub") or current_user.get("email")
-        sess = session.query(NexaAIChatSession).filter(
-            NexaAIChatSession.session_uuid == session_uuid,
-            NexaAIChatSession.user_email == user_email
-        ).first()
-        if not sess:
-            raise HTTPException(status_code=404, detail="Session not found")
-        
-        messages = session.query(NexaAIChatMessage).filter(
-            NexaAIChatMessage.session_id == sess.id
-        ).order_by(NexaAIChatMessage.created_at.asc()).all()
-        
-        return {
-            "status": "success",
-            "data": [
-                {
-                    "role": m.role,
-                    "content": m.content,
-                    "sources": m.sources,
-                    "created_at": m.created_at.isoformat()
-                } for m in messages
-            ]
-        }
-    finally:
-        session.close()
-
-@router.post("/ai/sessions/{session_uuid}/chat")
-async def session_chat(session_uuid: str, request: Request, current_user: dict = Depends(get_current_user)):
-    from src.repositories.database import Database
-    from src.repositories.schemas import NexaAIChatSession, NexaAIChatMessage
-    from src.services.qdrant_service import QdrantService
-    from src.services.nexa_ai_service import NexaAIService
-    
-    body = await request.json()
-    message_text = body.get("message", "")
-    if not message_text:
-        raise HTTPException(status_code=400, detail="Message is required")
-        
-    db = Database()
-    session = db.SessionLocal()
-    qdrant = QdrantService()
-    nexa_ai = NexaAIService()
-    
-    try:
-        user_email = current_user.get("sub") or current_user.get("email")
-        sess = session.query(NexaAIChatSession).filter(
-            NexaAIChatSession.session_uuid == session_uuid,
-            NexaAIChatSession.user_email == user_email
-        ).first()
-        if not sess:
-            raise HTTPException(status_code=404, detail="Session not found")
-            
-        # 1. Sync latest database state to Qdrant for RAG
-        qdrant.sync_database_to_qdrant(session)
-        
-        # 2. Semantic Search on Qdrant
-        context_hits = qdrant.search_knowledge_semantic(message_text, limit=6)
-        
-        # 3. Retrieve conversation history (limit to latest 10 messages for memory context)
-        history_msgs = session.query(NexaAIChatMessage).filter(
-            NexaAIChatMessage.session_id == sess.id
-        ).order_by(NexaAIChatMessage.created_at.desc()).limit(10).all()
-        # Reverse to get chronological order
-        history_msgs.reverse()
-        
-        history_list = [{"role": m.role, "content": m.content} for m in history_msgs]
-        
-        # 4. Invoke LLM via NexaAIService
-        ai_result = nexa_ai.generate_chat_response(message_text, context_hits, history_list)
-        ai_response = ai_result["response"]
-        sources = ai_result["sources"]
-        
-        # 5. Save user message and assistant reply to PostgreSQL
-        user_msg = NexaAIChatMessage(
-            session_id=sess.id,
-            role="user",
-            content=message_text
-        )
-        asst_msg = NexaAIChatMessage(
-            session_id=sess.id,
-            role="assistant",
-            content=ai_response,
-            sources=sources
-        )
-        session.add(user_msg)
-        session.add(asst_msg)
-        
-        # 6. Auto-generate a title if the session is still default
-        if sess.title == "New Conversation" or sess.title == "New Chat":
-            new_title = nexa_ai.generate_session_title(message_text)
-            sess.title = new_title
-            
-        session.commit()
-        
-        return {
-            "status": "success",
-            "data": {
-                "response": ai_response,
-                "sources": sources,
-                "session_title": sess.title
-            }
-        }
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        session.close()
-
-@router.post("/ai/sync")
-async def trigger_rag_sync(current_user: dict = Depends(get_current_user)):
-    from src.repositories.database import Database
-    from src.services.qdrant_service import QdrantService
-    
-    db = Database()
-    session = db.SessionLocal()
-    qdrant = QdrantService()
-    try:
-        result = qdrant.sync_database_to_qdrant(session)
-        return result
-    finally:
-        session.close()
 
 

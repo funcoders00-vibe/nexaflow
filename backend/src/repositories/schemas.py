@@ -533,32 +533,4 @@ class ActivityLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("Admin")
-
-
-# =========================================================
-# NEXA AI CHAT ENGINE
-# =========================================================
-
-class NexaAIChatSession(Base):
-    __tablename__ = "nexa_ai_chat_sessions"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_uuid = Column(String, unique=True, index=True, nullable=False)
-    user_email = Column(String, nullable=False)
-    title = Column(String, default="New Conversation")
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    messages = relationship("NexaAIChatMessage", back_populates="session", cascade="all, delete-orphan")
-
-
-class NexaAIChatMessage(Base):
-    __tablename__ = "nexa_ai_chat_messages"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(Integer, ForeignKey("nexa_ai_chat_sessions.id"), nullable=False)
-    role = Column(String, nullable=False)  # "user" or "assistant"
-    content = Column(Text, nullable=False)
-    sources = Column(JSON)  # List/array of sources used
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    session = relationship("NexaAIChatSession", back_populates="messages")
+

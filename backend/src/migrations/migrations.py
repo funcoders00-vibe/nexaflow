@@ -15,9 +15,7 @@ from src.repositories.schemas import (
     OTPVerification,
     Task,
     Payment,
-    ActivityLog,
-    NexaAIChatSession,
-    NexaAIChatMessage
+    ActivityLog
 )
 
 TABLE_ORDER_CREATION = [
@@ -39,10 +37,6 @@ TABLE_ORDER_CREATION = [
     Task.__tablename__,
     Payment.__tablename__,
     ActivityLog.__tablename__,
-    
-    # Nexa AI Chat Tables
-    NexaAIChatSession.__tablename__,
-    NexaAIChatMessage.__tablename__,
 ]
 
 
@@ -67,9 +61,6 @@ MODEL_CLASSES = {
     Task.__tablename__: Task,
     Payment.__tablename__: Payment,
     ActivityLog.__tablename__: ActivityLog,
-    
-    NexaAIChatSession.__tablename__: NexaAIChatSession,
-    NexaAIChatMessage.__tablename__: NexaAIChatMessage,
 }
 
 

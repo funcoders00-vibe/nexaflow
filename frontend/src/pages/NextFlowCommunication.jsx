@@ -698,8 +698,7 @@ const navItems = [
   { icon: "assignment", label: "Tasks" },
   { icon: "payments", label: "Finances" },
   { icon: "description", label: "Documents" },
-  { icon: "chat", label: "Communication" },
-  { icon: "smart_toy", label: "NexaAI" }
+  { icon: "chat", label: "Communication" }
 ];
 
 const avatarColors = ["#6366f1","#7c3aed","#0891b2","#1d4ed8","#8b5cf6","#059669","#d97706","#dc2626"];
@@ -754,7 +753,7 @@ export default function NexaFlowCommunication() {
     project_id:   "",
     email_type:   "welcome",
     client_email: "",
-    team_email:   "team@nexaflow.io",
+    team_email:   "zeptrixinfo@gmail.com",
     subject:      "",
     body:         "",
   });
@@ -927,7 +926,6 @@ export default function NexaFlowCommunication() {
                   if (label === "Finances")      navigate("/finances");
                   if (label === "Documents")     navigate("/documents");
                   if (label === "Communication") navigate("/communication");
-                  if (label === "NexaAI")        navigate("/nexaAI");
                 }}>
                 <span className="material-symbols-outlined nf-nav-icon">{icon}</span>
                 <span>{label}</span>
@@ -1041,7 +1039,7 @@ export default function NexaFlowCommunication() {
 
                     <div className="nf-form-group">
                       <label className="nf-form-label">Team Email *</label>
-                      <input className="nf-form-input" type="email" placeholder="team@nexaflow.io"
+                      <input className="nf-form-input" type="email" placeholder="zeptrixinfo@gmail.com"
                         value={form.team_email} onChange={(e) => setForm((f) => ({ ...f, team_email: e.target.value }))} />
                     </div>
 

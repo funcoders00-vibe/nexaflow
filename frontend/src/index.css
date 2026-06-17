@@ -400,3 +400,212 @@ body {
 .nf-sidebar {
   min-height: 100vh;
 }
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT SYSTEM (MOBILE, TABLET, LAPTOP)
+   ========================================================================== */
+
+/* ── LAPTOP/DESKTOP HARDENING (Default / > 1024px) ── */
+@media (min-width: 1025px) {
+  div.nf-app {
+    display: flex;
+  }
+}
+
+/* ── TABLET LANDSCAPE/PORTRAIT (768px to 1024px) ── */
+@media (max-width: 1024px) {
+  /* Collapse sidebar to icons-only compact state */
+  div.nf-app .nf-sidebar {
+    width: 80px !important;
+    min-width: 80px !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Hide text labels in sidebar */
+  div.nf-app .nf-brand-text,
+  div.nf-app .nf-nav-item span:not(.nf-nav-icon),
+  div.nf-app .nf-sidebar-bottom button span:not(.nf-nav-icon) {
+    display: none !important;
+  }
+  
+  /* Center icons in sidebar brand and nav items */
+  div.nf-app .nf-brand {
+    justify-content: center !important;
+    padding: 1rem 0 !important;
+  }
+  
+  div.nf-app .nf-nav-item {
+    justify-content: center !important;
+    padding: 0.8rem !important;
+  }
+  
+  div.nf-app .nf-sidebar-bottom {
+    display: flex !important;
+    justify-content: center !important;
+    padding: 1rem 0 0 !important;
+  }
+  
+  div.nf-app .nf-sidebar-bottom button {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  /* Adjust main container spacing */
+  div.nf-app .nf-content {
+    padding: 1.5rem !important;
+  }
+  
+  /* Adapt Page Grid Layouts to 1 column or 2 columns */
+  div.nf-app .nf-stats,
+  div.nf-app .nf-finance-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.2rem !important;
+  }
+  
+  div.nf-app .nf-lower,
+  div.nf-app .nf-main-grid,
+  div.nf-app .nf-client-project-grid,
+  div.nf-app .doc-split-layout,
+  div.nf-app .comm-split-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+}
+
+/* ── MOBILE SCREENS (< 768px) ── */
+@media (max-width: 767px) {
+  /* Main app flex-direction column so content stacks above bottom nav */
+  div.nf-app {
+    flex-direction: column !important;
+  }
+  
+  /* Sidebar turns into fixed bottom navigation bar */
+  div.nf-app .nf-sidebar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: 65px !important;
+    min-height: auto !important;
+    flex-direction: row !important;
+    border-right: none !important;
+    border-top: 1px solid rgba(6, 182, 212, 0.15) !important;
+    padding: 0 0.8rem !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    margin: 0 !important;
+    z-index: 1000 !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Hide sidebar brand header and create client footer on mobile bottom bar */
+  div.nf-app .nf-brand,
+  div.nf-app .nf-sidebar-bottom {
+    display: none !important;
+  }
+  
+  /* Convert navigation link list to a horizontal layout */
+  div.nf-app .nf-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Compact layout for mobile bottom nav items */
+  div.nf-app .nf-nav-item {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.4rem 0.2rem !important;
+    margin: 0 !important;
+    font-size: 0.6rem !important;
+    gap: 2px !important;
+    background: none !important;
+    border: none !important;
+    width: auto !important;
+    transform: none !important;
+  }
+  
+  /* Active tab indicator moves to bottom on mobile */
+  div.nf-app .nf-nav-item.active {
+    border-left: none !important;
+    border-bottom: 3px solid var(--accent-cyan) !important;
+    border-radius: 0 !important;
+    color: var(--accent-cyan) !important;
+  }
+  
+  /* Display tiny label under the icon for mobile bottom nav */
+  div.nf-app .nf-nav-item span:not(.nf-nav-icon) {
+    display: block !important;
+    font-size: 0.62rem !important;
+    font-weight: 700 !important;
+  }
+  
+  /* Main content container pushes up so bottom nav doesn't cover elements */
+  div.nf-app .nf-main {
+    padding-bottom: 70px !important;
+    min-height: calc(100vh - 65px) !important;
+  }
+  
+  /* Topbar scaling on mobile */
+  div.nf-app .nf-topbar {
+    padding: 0.6rem 1rem !important;
+  }
+  
+  div.nf-app .nf-user-info {
+    display: none !important; /* Hide username/role to save header space */
+  }
+  
+  /* Spacing and typography adjustments */
+  div.nf-app .nf-content {
+    padding: 1.2rem 1rem !important;
+  }
+  
+  div.nf-app .nf-page-title {
+    font-size: 1.6rem !important;
+  }
+  
+  div.nf-app .nf-page-sub {
+    font-size: 0.8rem !important;
+    margin-bottom: 1.2rem !important;
+  }
+  
+  /* Shift all grid columns to 1-column layouts */
+  div.nf-app .nf-stats,
+  div.nf-app .nf-finance-grid,
+  div.nf-app .nf-lower,
+  div.nf-app .nf-main-grid,
+  div.nf-app .nf-client-project-grid,
+  div.nf-app .doc-split-layout,
+  div.nf-app .comm-split-layout,
+  div.nf-app .nf-form-grid-2,
+  div.nf-app .nf-budget-deadline,
+  div.nf-app .lt-sig-grid,
+  div.nf-app .nf-form-row,
+  div.nf-app .nf-analytics-grid,
+  div.nf-app .nf-bottom-stats {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* Make lists/tables scrollable horizontally if columns overflow */
+  div.nf-app .nf-projects-card,
+  div.nf-app .nf-glass-card {
+    overflow-x: auto !important;
+  }
+  
+  /* Recharts ResponsiveContainer padding fix */
+  div.nf-app .recharts-responsive-container {
+    min-height: 250px !important;
+  }
+}
+

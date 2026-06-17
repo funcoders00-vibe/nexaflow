@@ -10,12 +10,20 @@ import base64
 from typing import List
 import resend
 from fastapi import UploadFile
+import base64
+import sib_api_v3_sdk
+
+from sib_api_v3_sdk.rest import ApiException
+
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 logger = get_logger("admin_repo")
 
 from src.repositories.schemas import Admin, OTPVerification
 
 from datetime import datetime
+
+
 
 class LoginRepository:
 
@@ -511,7 +519,7 @@ class EmailRepository:
         try:
             return (
                 session.query(Email)
-                .options(joinedload(Email.project))
+                .options(joinedload(Email.project).joinedload(Project.client))
                 .order_by(Email.created_at.desc())
                 .all()
             )
@@ -522,62 +530,107 @@ class EmailRepository:
             session.close()
 
     async def send_email(
-        self,
-        project_id: int,
-        email_type: str,
-        client_email: str,
-        team_email: str,
-        subject: str,
-        email_body: str,
-        attachments: List[UploadFile],
-        request_id: str
-    ):
+    self,
+    project_id: int,
+    email_type: str,
+    client_email: str,
+    team_email: str,
+    subject: str,
+    email_body: str,
+    attachments: List[UploadFile],
+    request_id: str
+):
 
-        resend_attachments = []
+        brevo_attachments = []
 
         for file in attachments:
 
             file_content = await file.read()
 
-            resend_attachments.append({
-                "filename": file.filename,
-                "content": base64.b64encode(file_content).decode("utf-8")
+            brevo_attachments.append({
+                "name": file.filename,
+                "content": base64.b64encode(
+                    file_content
+                ).decode("utf-8")
             })
 
-        params = {
-            "from": "NexaFlow <onboarding@resend.dev>",
-
-            "to": [
-                client_email
-            ],
-
-            "subject": subject,
-
-            "html": f"""
-            <div>
-                <p>{email_body}</p>
-            </div>
-            """,
-
-            "attachments": resend_attachments
-        }
-
-        # Log it locally as well
         client_id = None
+
         session = self._get_session()
+
         try:
-            proj = session.query(Project).filter_by(project_id=project_id).first()
+
+            proj = (
+                session.query(Project)
+                .filter_by(project_id=project_id)
+                .first()
+            )
+
             if proj:
                 client_id = proj.client_id
+
         finally:
+
             session.close()
 
         status = "Sent"
+
         response = None
+
         try:
-            response = resend.Emails.send(params)
+
+            configuration = sib_api_v3_sdk.Configuration()
+
+            configuration.api_key[
+                "api-key"
+            ] = BREVO_API_KEY
+
+            api_instance = (
+                sib_api_v3_sdk.TransactionalEmailsApi(
+                    sib_api_v3_sdk.ApiClient(
+                        configuration
+                    )
+                )
+            )
+
+            email = sib_api_v3_sdk.SendSmtpEmail(
+                sender={
+                    "name": "NexaFlow",
+                    "email": "zeptrixinfo@gmail.com"
+                },
+                to=[
+                    {
+                        "email": client_email
+                    },
+                    {
+                        "email": "zeptrixinfo@gmail.com"
+                    }
+                ],
+                subject=subject,
+                html_content=f"""
+                <div>
+                    <p>{email_body}</p>
+                </div>
+                """,
+                attachment=brevo_attachments
+            )
+
+            response = (
+                api_instance.send_transac_email(
+                    email
+                )
+            )
+
+            print(
+                f"Email sent successfully to {client_email}"
+            )
+
         except Exception as e:
-            logger.warning(f"Resend send failed: {e}")
+
+            logger.error(
+                f"Brevo send failed: {str(e)}"
+            )
+
             status = "Failed"
 
         await self.log_email({
@@ -594,7 +647,11 @@ class EmailRepository:
             "project_id": project_id,
             "email_type": email_type,
             "email_sent": status == "Sent",
-            "resend_response": response
+            "brevo_response": (
+                str(response)
+                if response
+                else None
+            )
         }
 
 

@@ -307,8 +307,7 @@ const navItems = [
   { icon: "assignment",  label: "Tasks" },
   { icon: "payments",    label: "Finances" },
   { icon: "description", label: "Documents" },
-  { icon: "chat",        label: "Communication" },
-  { icon: "smart_toy",   label: "NexaAI" }
+  { icon: "chat",        label: "Communication" }
 ];
 
 export default function NexaFlowDashboard() {
@@ -447,7 +446,6 @@ export default function NexaFlowDashboard() {
                   if (label === "Finances")      navigate("/finances");
                   if (label === "Documents")     navigate("/documents");
                   if (label === "Communication") navigate("/communication");
-                  if (label === "NexaAI")        navigate("/nexaAI");
                 }}
               >
                 <span className="material-symbols-outlined nf-nav-icon">{icon}</span>

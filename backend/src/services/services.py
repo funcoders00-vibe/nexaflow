@@ -8,24 +8,8 @@ from passlib.hash import pbkdf2_sha256
 logger = get_logger("auth_service")
 
 import random
-
 from datetime import datetime, timedelta
-
-import resend
-
-import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-resend.api_key = os.getenv("RESEND_API_KEY")
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ADD TO services.py
-# ─────────────────────────────────────────────────────────────────────────────
-import io, base64, os, smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import io, base64, os
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -40,13 +24,20 @@ from src.repositories.repositories import (
     InvoiceRepository, EmailRepository, GetProjectRepository,
 )
 from src.utils.exceptions.error_codes import validation_error
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key["api-key"] = BREVO_API_KEY
 
 # ── SMTP CONFIG — set via environment variables ───────────────────────────────
-SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT     = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER     = os.getenv("SMTP_USER", "your@gmail.com")       # sender address
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_app_password")
-COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "team@yourcompany.com")
+# SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
+# SMTP_PORT     = int(os.getenv("SMTP_PORT", "587"))
+# SMTP_USER     = os.getenv("SMTP_USER", "your@gmail.com")       # sender address
+# SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_app_password")
+# COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "team@yourcompany.com")
 STATIC_DIR    = os.getenv("STATIC_DIR", "static/documents")    # where PDFs are saved on disk
 
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -113,65 +104,60 @@ class LoginService:
 
         try:
 
-            msg = MIMEMultipart("alternative")
+            configuration = sib_api_v3_sdk.Configuration()
 
-            msg["Subject"] = "NexaFlow Login OTP"
+            configuration.api_key["api-key"] = BREVO_API_KEY
 
-            msg["From"] = SMTP_USER
-
-            msg["To"] = admin.email
-
-            html_content = f"""
-            <div style="font-family: Arial; padding:20px;">
-                <h2>NexaFlow Security Verification</h2>
-
-                <p>Your OTP Code:</p>
-
-                <div style="
-                    font-size:32px;
-                    font-weight:bold;
-                    letter-spacing:5px;
-                    color:#2563eb;
-                ">
-                    {otp}
-                </div>
-
-                <p>Expires in 5 minutes.</p>
-            </div>
-            """
-
-            msg.attach(MIMEText(html_content, "html"))
-
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-
-            server.starttls()
-
-            server.login(SMTP_USER, SMTP_PASSWORD)
-
-            server.sendmail(
-                SMTP_USER,
-                admin.email,
-                msg.as_string()
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                sib_api_v3_sdk.ApiClient(configuration)
             )
 
-            server.quit()
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=[
+                    {
+                        "email": admin.email
+                    }
+                ],
+                sender={
+                    "name": "NexaFlow",
+                    "email": "zeptrixinfo@gmail.com"
+                },
+                subject="NexaFlow Login OTP",
+                html_content=f"""
+                <div style="font-family: Arial; padding:20px;">
+                    <h2>NexaFlow Security Verification</h2>
+
+                    <p>Your OTP Code:</p>
+
+                    <div style="
+                        font-size:32px;
+                        font-weight:bold;
+                        letter-spacing:5px;
+                        color:#2563eb;
+                    ">
+                        {otp}
+                    </div>
+
+                    <p>Expires in 5 minutes.</p>
+                </div>
+                """
+            )
+
+            api_instance.send_transac_email(send_smtp_email)
 
             print(f"OTP sent successfully to {admin.email}")
 
-        except Exception as mail_err:
+        except ApiException as mail_err:
 
-            logger.warning(f"Could not send OTP email: {mail_err}")
+            logger.warning(
+                f"Could not send OTP email via Brevo: {mail_err}"
+            )
 
             print(
                 f"\n========================================"
                 f"\n[DEV] OTP CODE FOR {admin.email}: {otp}"
                 f"\n========================================\n"
             )
-
-        return {
-            "admin_id": admin.id,
-            "email": admin.email
-        }
 
     # =====================================================
     # VERIFY OTP
@@ -210,14 +196,16 @@ class LoginService:
 
         # JWT generation here
         import jwt
+        from src.settings import config
         token = jwt.encode(
             {
                 "sub": admin.email,
                 "role": admin.role,
                 "id": admin.id,
-                "name": admin.name or "User"
+                "name": admin.name or "User",
+                "exp": datetime.utcnow() + timedelta(hours=2)
             },
-            "nexaflow-super-secret-key-12345",
+            config.jwt_secret_key,
             algorithm="HS256"
         )
 
@@ -719,7 +707,7 @@ class GetEmailsService:
                 "project_name": e.project.project_name if e.project else "—",
                 "email_type":  e.email_type,
                 "subject":     e.subject,
-                "status":      e.status,
+                "status":      e.status.lower() if e.status else "pending",
                 "sent_at":     str(e.sent_at),
             }
             for e in emails

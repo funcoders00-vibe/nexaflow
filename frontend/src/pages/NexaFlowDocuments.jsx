@@ -642,16 +642,84 @@ const styles = `
       size: auto;
       margin: 0;
     }
-    body {
-      margin: 1.6cm !important;
-      background: white !important;
-      color: black !important;
+
+    /* Force browsers to keep background colors/gradients/images when printing */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
     }
-    .nf-sidebar,.nf-topbar,.nf-right-panel,.nf-tabs,.nf-breadcrumb,.nf-workflow,.nf-doc-cards,.nf-doc-actions,.nf-email-actions,.nf-placeholder-chips,.edit-hint,.print-hide { display:none!important; }
-    .nf-content { padding:0!important; }
-    .nf-doc-layout { grid-template-columns:1fr!important; }
-    .nf-doc-preview { border:none!important; box-shadow:none!important; background:white!important; }
+
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+    }
+
+    /* kill the grey app background everywhere */
+    .nf-app, .nf-main {
+      background: white !important;
+      display: block !important;
+      min-height: 0 !important;
+    }
+
+    /* remove the padding that was creating the white/grey margin gap */
+    .nf-content {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .nf-sidebar,.nf-topbar,.nf-right-panel,.nf-tabs,.nf-breadcrumb,.nf-workflow,.nf-doc-cards,.nf-doc-actions,.nf-email-actions,.nf-placeholder-chips,.edit-hint,.nf-header-row,.print-hide { display:none!important; }
+
+    .nf-doc-layout {
+      grid-template-columns: 1fr !important;
+      gap: 0 !important;
+      display: block !important;
+    }
+
+    /* let the letter fill the full page width, no rounded corners/border/shadow cutting it short */
+    .nf-doc-preview {
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+    }
+
+    /* give the letter body its own print-safe inner margin instead of relying on nf-content padding */
+    .lt-body {
+      padding: 1.6cm 1.8cm !important;
+    }
+
     .ef { background:transparent!important; box-shadow:none!important; }
+
+    /* explicitly re-affirm the header gradient survives print */
+    .lt-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      width: 100% !important;
+    }
+    .lt-company-name-hdr,
+    .lt-company-tag-hdr,
+    .lt-contact-line,
+    .lt-contact-line span { color: #fff !important; }
+    .lt-contact-line input.ef { color: rgba(255,255,255,0.7) !important; }
+
+    /* preserve badge colors */
+    .nf-meta-badge.client { background: var(--green-light) !important; color: #047857 !important; }
+    .nf-meta-badge.date { background: var(--amber-light) !important; color: #b45309 !important; }
+    .nf-meta-badge.budget { background: var(--blue-light) !important; color: var(--blue) !important; }
+    .lt-reminder-badge { background: var(--amber-light) !important; color: #d97706 !important; }
+    .nf-draft-badge { background: var(--amber-light) !important; color: #d97706 !important; }
+    .nf-done-badge { background: var(--green-light) !important; color: #059669 !important; }
+
+    /* preserve blue accents in the letter body */
+    .lt-section-h { border-left-color: var(--blue) !important; }
+    .lt-bullet-dot { background: var(--blue) !important; }
+    .lt-step-num {
+      background: linear-gradient(135deg, var(--blue), var(--blue-hover)) !important;
+      color: #fff !important;
+    }
   }
 `;
 
@@ -662,8 +730,7 @@ const navItems = [
   { icon: "assignment", label: "Tasks" },
   { icon: "payments", label: "Finances" },
   { icon: "description", label: "Documents" },
-  { icon: "chat", label: "Communication" },
-  { icon: "smart_toy", label: "NexaAI" }
+  { icon: "chat", label: "Communication" }
 ];
 
 const WORKFLOW_STEPS = ["Draft", "Generated", "Reviewed", "Sent", "Approved"];
@@ -672,11 +739,10 @@ const COMPANY = {
   name: "Zeptrix",
   full: "Zeptrix IT Solutions Private Limited",
   tag:  "IT Solutions Private Limited",
-  addr: "",
-  email: "@zeptrix.in",
+  addr: "chennai",
+  email: "zeptrixinfo@gmail.com",
   phone: "+91 8778785566",
   web:   "www.zeptrix.in",
-  gst:   "29ZEPTRIX001Z",
   logoUrl: "http://127.0.0.1:8000/static/zeptrix_logo.png",
 };
 
@@ -969,7 +1035,6 @@ export default function NexaFlowDocuments() {
                   if (label === "Finances")      navigate("/finances");
                   if (label === "Documents")     navigate("/documents");
                   if (label === "Communication") navigate("/communication");
-                  if (label === "NexaAI")        navigate("/nexaAI");
                 }}>
                 <span className="material-symbols-outlined nf-nav-icon">{icon}</span>
                 <span>{label}</span>

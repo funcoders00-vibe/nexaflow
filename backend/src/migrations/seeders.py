@@ -34,8 +34,8 @@ class Seeder:
                         is_active=True
                     ),
                     Admin(
-                        email="venkatb3011@gmail.com",
-                        password=pbkdf2_sha256.hash("venkey"),
+                        email="hemanthsuriya11@gmail.com",
+                        password=pbkdf2_sha256.hash("hemanthsuriya"),
                         name="Jeeva dharshan",
                         role="Admin",
                         salary=150000.0,

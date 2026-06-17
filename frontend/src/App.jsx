@@ -5,7 +5,6 @@ import NexaFlowCreateProject from "./pages/NexaFlowCreateProject";
 import NexaFlowDocuments from "./pages/NexaFlowDocuments";
 import NexaFlowProjects from "./pages/NexaFlowProjects";
 import NexaFlowCommunication from "./pages/NextFlowCommunication";
-import NexaAiChat from "./pages/NexaAiChat";
 import NexaFlowTasks from "./pages/NexaFlowTasks";
 import NexaFlowFinance from "./pages/NexaFlowFinance";
 
@@ -58,11 +57,6 @@ function App() {
         <Route path="/documents" element={
           <ProtectedRoute>
             <NexaFlowDocuments />
-          </ProtectedRoute>
-        } />
-        <Route path="/nexaAI" element={
-          <ProtectedRoute>
-            <NexaAiChat />
           </ProtectedRoute>
         } />
       </Routes>
