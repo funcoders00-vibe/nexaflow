@@ -42,6 +42,9 @@ class Database:
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
             return True
-        except Exception:
+
+        except Exception as e:
+            print("DATABASE ERROR:")
+            print(repr(e))
             return False
         
