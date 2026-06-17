@@ -5,6 +5,7 @@ load_dotenv()
 
 @dataclass
 class Config:
+    DATABASE_URL:str
     db_port: str
     db_host: str
     db_name: str
@@ -17,6 +18,7 @@ class Config:
 
 def get_config():
     return Config(
+        DATABASE_URL=os.getenv('DATABASE_URL'),
         db_port=os.getenv('DB_PORT'),
         db_host=os.getenv('DB_HOST'),
         db_name=os.getenv('DB_NAME'),

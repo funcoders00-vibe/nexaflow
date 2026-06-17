@@ -13,14 +13,10 @@ class Database:
         return cls._instance
  
     def _initialize(self):
-        password = quote_plus(config.db_password)
+        
  
         db_url = (
-            f"postgresql+psycopg2://{config.db_username}:"
-            f"{password}@"
-            f"{config.db_host}:"
-            f"{config.db_port}/"
-            f"{config.db_name}"
+            config.DATABASE_URL
         )
  
         self.engine = create_engine(db_url, pool_pre_ping=True)
