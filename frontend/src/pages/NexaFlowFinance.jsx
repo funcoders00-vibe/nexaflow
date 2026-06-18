@@ -173,7 +173,7 @@ export default function NexaFlowFinance() {
     fetchFinanceData();
 
     // WS Connection
-    const ws = new WebSocket("ws://localhost:8000/api/dashboard/ws/updates");
+    const ws = new WebSocket("wss://nexaflow-js2m.onrender.com/api/dashboard/ws/updates");
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "finance_update") {

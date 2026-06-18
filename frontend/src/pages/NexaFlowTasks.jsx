@@ -178,7 +178,7 @@ export default function NexaFlowTasks() {
     }
 
     // Connect WebSocket
-    const ws = new WebSocket("ws://localhost:8000/api/dashboard/ws/updates");
+    const ws = new WebSocket("wss://nexaflow-js2m.onrender.com/api/dashboard/ws/updates");
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "task_update") {
