@@ -149,7 +149,7 @@ export default function NexaFlowFinance() {
   const fetchFinanceData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/dashboard/finance", {
+      const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/finance", {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const result = await res.json();
@@ -188,7 +188,7 @@ export default function NexaFlowFinance() {
     if (!invoiceNumber || !paymentAmount) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/dashboard/finance/payments", {
+      const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/finance/payments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
