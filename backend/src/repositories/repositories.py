@@ -12,7 +12,7 @@ import resend
 from fastapi import UploadFile
 import base64
 import sib_api_v3_sdk
-
+from datetime import datetime, timezone
 from sib_api_v3_sdk.rest import ApiException
 
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
@@ -501,7 +501,7 @@ class EmailRepository:
                 body=data.get("body"),
                 recipient_email=data.get("recipient_email"),
                 status=data.get("status", "Sent"),
-                sent_at=datetime.utcnow()
+                sent_at = datetime.now(timezone.utc)
             )
             session.add(email_log)
             session.commit()
