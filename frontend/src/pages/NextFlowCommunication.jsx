@@ -894,8 +894,32 @@ export default function NexaFlowCommunication() {
   const delivRate   = logs.length ? ((sentCount / logs.length) * 100).toFixed(1) : "0.0";
   const welcomeCount = logs.filter(l => l.email_type === "welcome").length;
 
-  const formatDate = (dt) => { if (!dt) return "—"; const d = new Date(dt); return isNaN(d) ? dt : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); };
-  const formatTime = (dt) => { if (!dt) return ""; const d = new Date(dt); return isNaN(d) ? "" : d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }); };
+  const formatDate = (dt) => {
+  if (!dt) return "—";
+
+  const d = new Date(dt);
+
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata"
+  });
+};
+
+const formatTime = (dt) => {
+  if (!dt) return "";
+
+  const d = new Date(dt);
+
+  return d.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata"
+  });
+};
 
   const reset = () => { setEmailType("all"); setStatusFilter("all"); setPage(1); };
 
