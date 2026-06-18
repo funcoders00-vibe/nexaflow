@@ -448,7 +448,7 @@ export default function NexaFlowLogin() {
       return;
     }
 
-    console.log("OTP sent:", data);
+    // console.log("OTP sent:", data);
 
     // SHOW OTP INPUT
     setShowOtp(true);
@@ -497,7 +497,7 @@ export default function NexaFlowLogin() {
       return;
     }
 
-    console.log("OTP verified:", data);
+    // console.log("OTP verified:", data);
 
     // STORE JWT TOKEN
     localStorage.setItem(
