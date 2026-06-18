@@ -573,7 +573,7 @@ export default function NexaFlowLogin() {
 
             <div className="nf-label">
               <label htmlFor="password">Password</label>
-              <button className="nf-forgot" type="button">Forgot Password?</button>
+              {/* <button className="nf-forgot" type="button">Forgot Password?</button> */}
             </div>
             <div className="nf-field-wrap">
               <span className="nf-field-icon"><span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>lock</span></span>
