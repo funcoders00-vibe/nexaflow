@@ -382,7 +382,7 @@ export default function NexaFlowDashboard() {
     fetchDashboardData();
 
     // WS updates
-    const ws = new WebSocket("ws://127.0.0.1:8000/api/dashboard/ws/updates");
+    const ws = new WebSocket("wss://nexaflow-js2m.onrender.com/api/dashboard/ws/updates");
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.message) {
