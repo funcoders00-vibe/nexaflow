@@ -764,7 +764,7 @@ export default function NexaFlowCommunication() {
 
   const fetchLogs = async () => {
     try {
-      const res  = await fetch("http://127.0.0.1:8000/api/dashboard/get-emails", {
+      const res  = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-emails", {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
       const data = await res.json();
@@ -774,7 +774,7 @@ export default function NexaFlowCommunication() {
 
   const fetchProjects = async () => {
     try {
-      const res  = await fetch("http://127.0.0.1:8000/api/dashboard/get-projects", {
+      const res  = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-projects", {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
       const data = await res.json();
@@ -850,7 +850,7 @@ export default function NexaFlowCommunication() {
         }
       });
       const res = await fetch(
-        "http://127.0.0.1:8000/api/dashboard/send-email",
+        "https://nexaflow-js2m.onrender.com/api/dashboard/send-email",
         {
           method: "POST",
           headers: {

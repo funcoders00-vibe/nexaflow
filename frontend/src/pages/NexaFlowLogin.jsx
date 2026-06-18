@@ -424,7 +424,7 @@ export default function NexaFlowLogin() {
   try {
 
     const response = await fetch(
-      "http://127.0.0.1:8000/api/dashboard/login",
+      "https://nexaflow-js2m.onrender.com/api/dashboard/login",
       {
         method: "POST",
 
@@ -473,7 +473,7 @@ export default function NexaFlowLogin() {
   try {
 
     const response = await fetch(
-      "http://127.0.0.1:8000/api/dashboard/verify-otp",
+      "https://nexaflow-js2m.onrender.com/api/dashboard/verify-otp",
       {
         method: "POST",
 

@@ -481,7 +481,7 @@ export default function NexaFlowProjects() {
   // ── Fetch projects ────────────────────────────────────────────────────────
   const fetchProjects = async () => {
     try {
-      const res  = await fetch("http://127.0.0.1:8000/api/dashboard/get-projects", {
+      const res  = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-projects", {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
       const data = await res.json();
@@ -502,7 +502,7 @@ export default function NexaFlowProjects() {
 
   // ── Status update helpers ─────────────────────────────────────────────────
   const updateProjectStatus = async (projectId, newStatus, approver) => {
-    const res = await fetch("http://127.0.0.1:8000/api/dashboard/update-project-status", {
+    const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/update-project-status", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

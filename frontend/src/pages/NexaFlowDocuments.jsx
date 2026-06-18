@@ -743,7 +743,7 @@ const COMPANY = {
   email: "zeptrixinfo@gmail.com",
   phone: "+91 8778785566",
   web:   "www.zeptrix.in",
-  logoUrl: "http://127.0.0.1:8000/static/zeptrix_logo.png",
+  logoUrl: "https://nexaflow-js2m.onrender.com/static/zeptrix_logo.png",
 };
 
 function AutoTextarea({ value, onChange, className, style }) {
@@ -906,7 +906,7 @@ export default function NexaFlowDocuments() {
     (async () => {
       setLoading(true);
       try {
-        const res  = await fetch("http://127.0.0.1:8000/api/dashboard/get-projects", {
+        const res  = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-projects", {
           headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
@@ -977,7 +977,7 @@ export default function NexaFlowDocuments() {
 
   const handleSaveAgreement = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/dashboard/generate-agreement", {
+      const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/generate-agreement", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -992,7 +992,7 @@ export default function NexaFlowDocuments() {
 
   const handleGenerateInvoice = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/dashboard/generate-invoice", {
+      const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/generate-invoice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

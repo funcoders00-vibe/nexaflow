@@ -326,7 +326,7 @@ export default function NexaFlowDashboard() {
       const token = localStorage.getItem("token");
       
       // Fetch me
-      const meRes = await fetch("http://127.0.0.1:8000/api/dashboard/auth/me", {
+      const meRes = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/auth/me", {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (meRes.ok) {
@@ -335,7 +335,7 @@ export default function NexaFlowDashboard() {
       }
 
       // Fetch projects
-      const res = await fetch("http://127.0.0.1:8000/api/dashboard/get-projects", {
+      const res = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-projects", {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -355,7 +355,7 @@ export default function NexaFlowDashboard() {
       }
 
       // Fetch activity logs for the live feed
-      const logsRes = await fetch("http://127.0.0.1:8000/api/dashboard/activity-logs", {
+      const logsRes = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/activity-logs", {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (logsRes.ok) {
