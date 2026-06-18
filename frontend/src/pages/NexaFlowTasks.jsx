@@ -198,7 +198,7 @@ export default function NexaFlowTasks() {
         const token = localStorage.getItem("token");
         
         // Fetch projects
-        const projRes = await fetch("http://localhost:8000/api/dashboard/get-projects", {
+        const projRes = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/get-projects", {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const projData = await projRes.json();
@@ -210,7 +210,7 @@ export default function NexaFlowTasks() {
         }
 
         // Fetch employees
-        const empRes = await fetch("http://localhost:8000/api/dashboard/employees", {
+        const empRes = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/employees", {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const empData = await empRes.json();
@@ -230,7 +230,7 @@ export default function NexaFlowTasks() {
   const fetchTasks = async (projId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/dashboard/projects/${projId}/tasks`, {
+      const res = await fetch(`https://nexaflow-js2m.onrender.com/api/dashboard/projects/${projId}/tasks`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -253,7 +253,7 @@ export default function NexaFlowTasks() {
     if (!newTaskName || !selectedProjectId) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/dashboard/projects/${selectedProjectId}/tasks`, {
+      const res = await fetch(`https://nexaflow-js2m.onrender.com/api/dashboard/projects/${selectedProjectId}/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -284,7 +284,7 @@ export default function NexaFlowTasks() {
   const updateTaskStatus = async (taskId, nextStatus) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/dashboard/tasks/${taskId}`, {
+      const res = await fetch(`https://nexaflow-js2m.onrender.com/api/dashboard/tasks/${taskId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -303,7 +303,7 @@ export default function NexaFlowTasks() {
   const logTaskTime = async (taskId, currentHours, hoursToAdd) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/dashboard/tasks/${taskId}`, {
+      const res = await fetch(`https://nexaflow-js2m.onrender.com/api/dashboard/tasks/${taskId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -323,7 +323,7 @@ export default function NexaFlowTasks() {
     if (!confirm("Are you sure you want to delete this task?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/dashboard/tasks/${taskId}`, {
+      const res = await fetch(`https://nexaflow-js2m.onrender.com/api/dashboard/tasks/${taskId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });

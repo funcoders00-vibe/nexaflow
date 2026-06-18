@@ -453,7 +453,7 @@ export default function NexaFlowCreateProject() {
   };
   const handleSubmit = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/dashboard/create-project", {
+      const response = await fetch("https://nexaflow-js2m.onrender.com/api/dashboard/create-project", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
