@@ -630,9 +630,9 @@ export default function NexaFlowLogin() {
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
-              <label className="nf-checkbox-label" htmlFor="remember">
+              {/* <label className="nf-checkbox-label" htmlFor="remember">
                 Remember this device
-              </label>
+              </label> */}
             </div>
 
             {
